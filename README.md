@@ -1,6 +1,6 @@
 # Synaptic Stripping
 
-This repository is the official implementation of [Synaptic Stripping](#). This codebase is still in progress of being cleaned up for eventual open source release.
+This repository is the official implementation of [Synaptic Stripping](#). This codebase is in progress of being cleaned up for eventual open source release.
 
 ![](./figures/neuroregeneration.svg)
 
@@ -19,31 +19,31 @@ pip install -r requirements.txt
 ## Training
 
 ```train
-python train.py --checkpoint_dir=<DIR> \
-                --dataset=<DATASET> \
-                --data_path=<DATA_PATH> \
-                --batch_size=<BATCH_SIZE> \
-                --num_workers=<NUM_WORKERS> \
-                --model=<MODEL> \
-                --activation=<ACTIVATION> \
-                --heads=<HEADS> \
-                --layers=<LAYERS> \
-                --hidden_size=<HIDDEN_SIZE> \
-                --expansion_factor=<EXPANSION_FACTOR> \
-                --epochs=<EPOCHS> \
-                --warmup_epochs=<WARMUP_EPOCHS> \
-                --save_freq=<SAVE_FREQ> \
-                --optimizer=<OPTIMIZER> \
-                --scheduler=<SCHEDULER> \
-                --init_lr=<INIT_LR> \
-                --final_lr=<FINAL_LR> \
-                --weight_decay=<WEIGHT_DECAY> \
-                --autoaugment=<AUTOAUGMENT> \
-                --synaptic_stripping=<SYNAPTIC_STRIPPING> \
-                --stripping_frequency=<STRIPPING_FREQUENCY> \
-                --stripping_factor=<STRIPPING_FACTOR> \
-                --verbose=<V> \
-                --seed=<SEED> \
+python train.py --checkpoint_dir=<STR> \
+                --dataset=<STR> \
+                --data_path=<STR> \
+                --batch_size=<INT> \
+                --num_workers=<INT> \
+                --model=<STR> \
+                --activation=<STR> \
+                --heads=<INT> \
+                --layers=<INT> \
+                --hidden_size=<INT> \
+                --expansion_factor=<INT> \
+                --epochs=<INT> \
+                --warmup_epochs=<INT> \
+                --save_freq=<INT> \
+                --optimizer=<STR> \
+                --scheduler=<STR> \
+                --init_lr=<FLOAT> \
+                --final_lr=<FLOAT> \
+                --weight_decay=<FLOAT> \
+                --autoaugment=<BOOL> \
+                --synaptic_stripping=<BOOL> \
+                --stripping_frequency=<INT> \
+                --stripping_factor=<FLOAT> \
+                --verbose=<BOOL> \
+                --seed=<INT> \
 ```
 
 Parameters:
@@ -58,7 +58,7 @@ Parameters:
 - `heads` &mdash; number of heads in the self attention layers (default: 8)
 - `layers` &mdash; number of transformer encoder layers (default: 7)
 - `hidden_size` &mdash; number of features in the self attention layers (default: 384)
-- `expansion_factor` &mdash; expansion of the hidden size fo mlp layers in the encoder blocks (default: 4)
+- `expansion_factor` &mdash; expansion of the hidden size for mlp layers in the encoder blocks (default: 4)
 - `epochs` &mdash; number of training epochs (default: 200)
 - `warmup_epochs` &mdash; number of epochs to linearly increase the learning rate from 0 to init_lr (default: 5)
 - `save_freq` &mdash; save the model every n epochs during training (default: 10)
