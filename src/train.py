@@ -1,8 +1,10 @@
 import argparse
 import torch
-import models
 import os
 import sys
+from models.vit import ViT
+from data import get_loaders
+from utils import setup_hooks, zero_hooks
 
 parser = argparse.ArgumentParser(description='Synaptic Stripping')
 
@@ -67,6 +69,58 @@ parser.add_argument('--stripping_factor', type=float, default=0.05, metavar='FLO
 
 args = parser.parse_args()
 
+torch.manual_seed(args.seed)
+
+
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+#######
+# Data
+#######
+
 os.makedirs(args.checkpoint_dir, exist_ok=True)
+
+(train_loader, test_loader), num_classes = get_loaders(
+    dataset=args.dataset,
+    data_path=args.data_path,
+    batch_size=args.batch_size,
+    num_workers=args.num_workers
+)
+
+model = ViT().to(device)
+
+########
+# Train
+########
+
+criterion = torch.nn.CrossEntropyLoss()
+optimizer = torch.optim.AdamW(
+    model.parameters(), lr=args.init_lr, weight_decay=args.weight_decay)
+warmup = torch.optim.lr_scheduler.LinearLR(
+    optimizer, start_factor=1e-8, end_factor=1, total_iters=args.warmup_epochs)
+decay = torch.optim.lr_scheduler.CosineAnnealingLR(
+    optimizer, T_max=args.epochs - args.warmup_epochs, eta_min=args.final_lr)
+scheduler = torch.optim.lr_scheduler.SequentialLR(
+    optimizer, schedulers=[warmup, decay], milestones=[args.warmup_epochs])
+
+if args.synaptic_stripping:
+    hook_outputs = setup_hooks(model)
+
+for epoch in range(args.epochs):
+    train_loss = 0
+    test_loss = 0
+
+    # Training Loop
+    model.train()
+    for _, (inputs, targets) in enumerate(train_loader):
+        if args.synaptic_stripping:
+            # Hooks automatically keep track of all forward pass outputs.
+            # We zero out the hooks to prevent overflow.
+            zero_hooks(hook_outputs)
+        pass
+
+    # Validation Loop
+    model.eval()
+    for _, (inputs, targets) in enumerate(test_loader):
+        pass
+    pass
