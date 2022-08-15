@@ -61,7 +61,7 @@ Parameters:
 - `scheduler` &mdash; learning rate schedule for the main phase of training [cosine/~~linear~~] (default: cosine)
 - `init_lr` &mdash; initial learning rate (default: 1e-3)
 - `final_lr` &mdash; final learning rate (default: 1e-5)
-- `weight_decay` &mdash; (default: 5e-5)
+- `weight_decay` &mdash; weight decay for the optimizer (default: 5e-5)
 - `autoaugment` &mdash; include autoaugment data augmentation [true/false] (default: true)
 - `stripping_frequency` &mdash; number of epochs between synaptic stripping iterations (default: 1)
 - `stripping_factor` &mdash; percentage of remaining weights to prune from dead neurons at each stripping iteration [0 < x < 1.0] (default: 0.05)
