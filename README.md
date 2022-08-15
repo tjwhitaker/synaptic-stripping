@@ -4,7 +4,9 @@ This repository is the official implementation of [Synaptic Stripping](#). This 
 
 ![](./figures/neuroregeneration.svg)
 
-The current implementation is set up for vision transformers.
+Dead neurons are identified. Problematic connections are pruned. Training continues with regenerated neurons.
+
+The current implementation is set up for the vision transformer experiments.
 
 ## Requirements
 
@@ -23,6 +25,7 @@ python train.py --checkpoint_dir=<DIR> \
                 --batch_size=<BATCH_SIZE> \
                 --num_workers=<NUM_WORKERS> \
                 --model=<MODEL> \
+                --activation=<ACTIVATION> \
                 --heads=<HEADS> \
                 --layers=<LAYERS> \
                 --hidden_size=<HIDDEN_SIZE> \
@@ -36,6 +39,7 @@ python train.py --checkpoint_dir=<DIR> \
                 --final_lr=<FINAL_LR> \
                 --weight_decay=<WEIGHT_DECAY> \
                 --autoaugment=<AUTOAUGMENT> \
+                --synaptic_stripping=<SYNAPTIC_STRIPPING> \
                 --stripping_frequency=<STRIPPING_FREQUENCY> \
                 --stripping_factor=<STRIPPING_FACTOR> \
                 --verbose=<V> \
@@ -50,6 +54,7 @@ Parameters:
 - `batch_size` &mdash; batch size for both the training and test loaders (default: 128)
 - `num_workers` &mdash; number of workers to use for the data loaders (default: 4)
 - `model` &mdash; name of the model architecture [vit/~~mlp~~] (default: vit)
+- `activation` &mdash; name of activation function in transformer encoder MLPs [gelu/relu] (default: relu)
 - `heads` &mdash; number of heads in the self attention layers (default: 8)
 - `layers` &mdash; number of transformer encoder layers (default: 7)
 - `hidden_size` &mdash; number of features in the self attention layers (default: 384)
@@ -63,6 +68,7 @@ Parameters:
 - `final_lr` &mdash; final learning rate (default: 1e-5)
 - `weight_decay` &mdash; weight decay for the optimizer (default: 5e-5)
 - `autoaugment` &mdash; include autoaugment data augmentation [true/false] (default: true)
+- `synaptic_stripping` &mdash; include synaptic stripping during training [true/false] (default: true)
 - `stripping_frequency` &mdash; number of epochs between synaptic stripping iterations (default: 1)
 - `stripping_factor` &mdash; percentage of remaining weights to prune from dead neurons at each stripping iteration [0 < x < 1.0] (default: 0.05)
 - `verbose` &mdash; [true/false] (default: true)
