@@ -1,10 +1,11 @@
 import argparse
 import torch
+import torchmetrics
 import os
 import sys
 from models.vit import ViT
 from data import get_loaders
-from utils import setup_hooks, zero_hooks
+from utils import setup_hooks, remove_hooks, calculate_dead_neurons, synaptic_strip
 
 parser = argparse.ArgumentParser(description='Synaptic Stripping')
 
@@ -30,6 +31,8 @@ parser.add_argument('--model', type=str, default=None, metavar='STR',
                     help='model name (default: vit)')
 parser.add_argument('--activation', type=str, default='relu', metavar='STR',
                     help='activation function for transformer encoder MLPs (default: relu)')
+parser.add_argument('--patch_size', type=int, default=8,
+                    metavar='INT', help='image patch size (default: 8)')
 parser.add_argument('--heads', type=int, default=8, metavar='INT',
                     help='number of self attention heads (default: 8')
 parser.add_argument('--layers', type=int, default=7, metavar='INT',
@@ -80,14 +83,26 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 os.makedirs(args.checkpoint_dir, exist_ok=True)
 
-(train_loader, test_loader), num_classes = get_loaders(
+train_loader, test_loader = get_loaders(
     dataset=args.dataset,
     data_path=args.data_path,
+    autoaugment=args.autoaugment,
     batch_size=args.batch_size,
     num_workers=args.num_workers
 )
 
-model = ViT().to(device)
+########
+# Model
+########
+
+model = ViT(
+    patch=args.patch_size,
+    head=args.heads,
+    num_layers=args.layers,
+    hidden=args.hidden_size,
+    mlp_hidden=args.hidden_size * args.expansion_factor,
+    num_classes=len(train_loader.dataset.classes),
+    activation=args.activation).to(device)
 
 ########
 # Train
@@ -103,24 +118,70 @@ decay = torch.optim.lr_scheduler.CosineAnnealingLR(
 scheduler = torch.optim.lr_scheduler.SequentialLR(
     optimizer, schedulers=[warmup, decay], milestones=[args.warmup_epochs])
 
+# Metrics
+train_accuracy = torchmetrics.Accuracy().to(device)
+train_loss = torchmetrics.MeanMetric().to(device)
+test_accuracy = torchmetrics.Accuracy().to(device)
+test_loss = torchmetrics.MeanMetric().to(device)
+
 if args.synaptic_stripping:
     hook_outputs = setup_hooks(model)
 
 for epoch in range(args.epochs):
-    train_loss = 0
-    test_loss = 0
-
     # Training Loop
     model.train()
     for _, (inputs, targets) in enumerate(train_loader):
-        if args.synaptic_stripping:
-            # Hooks automatically keep track of all forward pass outputs.
-            # We zero out the hooks to prevent overflow.
-            zero_hooks(hook_outputs)
-        pass
+        inputs = inputs.to(device)
+        targets = targets.to(device)
+        predictions = model(inputs)
+
+        train_accuracy.update(predictions, targets)
+
+        loss = criterion(predictions, targets)
+        train_loss.update(loss.item())
+
+        model.zero_grad()
+        loss.backward()
+        optimizer.step()
 
     # Validation Loop
     model.eval()
+
+    if args.activation == 'relu':
+        hook_handles, hook_outputs = setup_hooks(model)
+
     for _, (inputs, targets) in enumerate(test_loader):
-        pass
-    pass
+        inputs = inputs.to(device)
+        targets = targets.to(device)
+        predictions = model(inputs)
+
+        test_accuracy.update(predictions, targets)
+
+        loss = criterion(predictions, targets)
+        test_loss.update(loss.item())
+
+    if args.activation == 'relu':
+        dead_neurons = calculate_dead_neurons(hook_outputs)
+        remove_hooks(hook_handles)
+
+    if args.synaptic_stripping and (epoch % args.stripping_frequency == 0):
+        synaptic_strip(model, dead_neurons, args.stripping_factor)
+
+    scheduler.step()
+
+    total_train_accuracy = train_accuracy.compute()
+    total_train_loss = train_loss.compute()
+    total_test_accuracy = test_accuracy.compute()
+    total_test_loss = test_loss.compute()
+
+    train_accuracy.reset()
+    train_loss.reset()
+    test_accuracy.reset()
+    test_loss.reset()
+
+    if args.verbose:
+        print("=============================================================")
+        print(f"Epoch: {epoch}")
+        print(f"Train Loss: {train_loss} Train Accuracy: {train_accuracy}")
+        print(f"Test Loss: {test_loss} Test Accuracy: {test_accuracy}")
+        print()

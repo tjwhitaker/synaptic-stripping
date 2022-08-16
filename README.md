@@ -26,6 +26,7 @@ python train.py --checkpoint_dir=<STR> \
                 --num_workers=<INT> \
                 --model=<STR> \
                 --activation=<STR> \
+                --patch_size=<INT> \
                 --heads=<INT> \
                 --layers=<INT> \
                 --hidden_size=<INT> \
@@ -55,6 +56,7 @@ Parameters:
 - `num_workers` &mdash; number of workers to use for the data loaders (default: 4)
 - `model` &mdash; name of the model architecture [vit/~~mlp~~] (default: vit)
 - `activation` &mdash; name of activation function in transformer encoder MLPs [gelu/relu] (default: relu)
+- `patch_size` &mdash; size of image patches (default: 8)
 - `heads` &mdash; number of heads in the self attention layers (default: 8)
 - `layers` &mdash; number of transformer encoder layers (default: 7)
 - `hidden_size` &mdash; number of features in the self attention layers (default: 384)
