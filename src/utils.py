@@ -77,3 +77,27 @@ def synaptic_strip(model, dead_neurons, stripping_factor, device):
                         hook[-1].mask = None
                 elif isinstance(hook, torch.nn.utils.prune.CustomFromMask):
                     hook.mask = None
+
+
+def count_active_parameters(model, dead_neurons, synaptic_stripping, device):
+    active_params = 0
+
+    for (name, indices) in dead_neurons.items():
+        module_layers = name.split('.')
+
+        # Hacky way to get the linear layer since hooks use the relu.
+        # Substract 1 to index the linear layer preceding the relu in sequential module.
+        module_layers[-1] = str(int(module_layers[-1]) - 1)
+        layer = reduce(getattr, module_layers, model)
+
+        if isinstance(layer, torch.nn.Linear):
+            # Mask dead neurons
+            mask = torch.ones(layer.weight.shape)
+            mask[indices, :] = 0
+
+            if synaptic_stripping:
+                mask = torch.mul(mask, layer.weight_mask)
+
+            active_params += torch.count_nonzero(mask)
+
+    return active_params

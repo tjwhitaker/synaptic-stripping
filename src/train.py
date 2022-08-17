@@ -5,7 +5,7 @@ import os
 import sys
 from models.vit import ViT
 from data import get_loaders
-from utils import setup_hooks, remove_hooks, calculate_dead_neurons, synaptic_strip
+from utils import setup_hooks, remove_hooks, calculate_dead_neurons, synaptic_strip, count_active_parameters
 
 parser = argparse.ArgumentParser(description='Synaptic Stripping')
 
@@ -13,8 +13,8 @@ parser.add_argument('--checkpoint_dir', type=str, default='checkpoints', metavar
                     help='training directory (default: checkpoints)')
 parser.add_argument('--seed', type=int, default=1,
                     metavar='INT', help='random seed (default: 1)')
-parser.add_argument('--verbose', type=bool, default=True,
-                    metavar='BOOL', help='logging verbosity (default: True)')
+parser.add_argument('--verbose', type=int, default=1,
+                    metavar='INT', help='logging verbosity (default: 1)')
 
 # Data Args
 parser.add_argument('--dataset', type=str, default='cifar10', metavar='STR',
@@ -27,7 +27,7 @@ parser.add_argument('--num-workers', type=int, default=4, metavar='INT',
                     help='number of workers (default: 4)')
 
 # Model Args
-parser.add_argument('--model', type=str, default=None, metavar='STR',
+parser.add_argument('--model', type=str, default="ViT", metavar='STR',
                     help='model name (default: vit)')
 parser.add_argument('--activation', type=str, default='relu', metavar='STR',
                     help='activation function for transformer encoder MLPs (default: relu)')
@@ -59,23 +59,24 @@ parser.add_argument('--final_lr', type=float, default=1e-5, metavar='FLOAT',
                     help='final learning rate (default: 1e-5)')
 parser.add_argument('--weight_decay', type=float, default=5e-5, metavar='FLOAT',
                     help='weight decay (default: 5e-5)')
-parser.add_argument('--autoaugment', type=bool, default=True, metavar='BOOL',
-                    help='use autoaugment data augmentation (default: True)')
+parser.add_argument('--autoaugment', type=int, default=1, metavar='INT',
+                    help='use autoaugment data augmentation (default: 1)')
 
 # Stripping Args
-parser.add_argument('--synaptic_stripping', type=bool, metavar='BOOL',
-                    default=True, help='use synaptic stripping (default: True)')
+parser.add_argument('--synaptic_stripping', type=int, metavar='INT',
+                    default=1, help='use synaptic stripping (default: 1)')
 parser.add_argument('--stripping_frequency', type=int, default=1, metavar='INT',
                     help='number of epochs in between stripping iterations (default: 1)')
 parser.add_argument('--stripping_factor', type=float, default=0.05, metavar='FLOAT',
                     help='percentage of weights to remove from dead neurons at each stripping iteration (default: 0.05)')
 
 args = parser.parse_args()
-
 torch.manual_seed(args.seed)
-
-
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+
+if args.verbose:
+    print(''.join(f"{k}={v}\n" for k, v in vars(args).items()))
 
 #######
 # Data
@@ -112,7 +113,7 @@ criterion = torch.nn.CrossEntropyLoss()
 optimizer = torch.optim.AdamW(
     model.parameters(), lr=args.init_lr, weight_decay=args.weight_decay)
 warmup = torch.optim.lr_scheduler.LinearLR(
-    optimizer, start_factor=1e-8, end_factor=1, total_iters=args.warmup_epochs)
+    optimizer, start_factor=1e-5, end_factor=1, total_iters=args.warmup_epochs)
 decay = torch.optim.lr_scheduler.CosineAnnealingLR(
     optimizer, T_max=args.epochs - args.warmup_epochs, eta_min=args.final_lr)
 scheduler = torch.optim.lr_scheduler.SequentialLR(
@@ -123,6 +124,8 @@ train_accuracy = torchmetrics.Accuracy().to(device)
 train_loss = torchmetrics.MeanMetric().to(device)
 test_accuracy = torchmetrics.Accuracy().to(device)
 test_loss = torchmetrics.MeanMetric().to(device)
+num_dead_neurons = torchmetrics.SumMetric().to(device)
+num_active_params = torchmetrics.SumMetric().to(device)
 
 if args.synaptic_stripping:
     hook_outputs = setup_hooks(model)
@@ -163,26 +166,45 @@ for epoch in range(args.epochs):
     if args.activation == 'relu':
         dead_neurons = calculate_dead_neurons(hook_outputs)
         remove_hooks(hook_handles)
-        print(dead_neurons)
 
-    if args.synaptic_stripping and (epoch % args.stripping_frequency == 0):
-        synaptic_strip(model, dead_neurons, args.stripping_factor, device)
+        for layer, indices in dead_neurons.items():
+            num_dead_neurons.update(len(indices))
 
+        if args.synaptic_stripping and (epoch % args.stripping_frequency == 0):
+            synaptic_strip(model, dead_neurons, args.stripping_factor, device)
+
+        num_active_params.update(count_active_parameters(
+            model, dead_neurons, args.synaptic_stripping, device))
+
+    # Debug
     scheduler.step()
+
+    if (epoch % args.save_freq == 0) or (epoch == (args.epochs - 1)):
+        torch.save(model.state_dict(
+        ), f"{args.checkpoint_dir}/{args.activation}_{args.synaptic_stripping}_{epoch}.pt")
 
     total_train_accuracy = train_accuracy.compute()
     total_train_loss = train_loss.compute()
     total_test_accuracy = test_accuracy.compute()
     total_test_loss = test_loss.compute()
+    total_dead_neurons = num_dead_neurons.compute()
+    total_active_params = num_active_params.compute()
 
     train_accuracy.reset()
     train_loss.reset()
     test_accuracy.reset()
     test_loss.reset()
+    num_dead_neurons.reset()
+    num_active_params.reset()
 
     if args.verbose:
         print("=============================================================")
+        print()
         print(f"Epoch: {epoch}")
-        print(f"Train Loss: {train_loss} Train Accuracy: {train_accuracy}")
-        print(f"Test Loss: {test_loss} Test Accuracy: {test_accuracy}")
+        print(
+            f"Train Loss: {total_train_loss} Train Accuracy: {total_train_accuracy}")
+        print(
+            f"Test Loss: {total_test_loss} Test Accuracy: {total_test_accuracy}")
+        print(f"Number Dead Neurons: {total_dead_neurons}")
+        print(f"Number of Active Parameters: {total_active_params}")
         print()
