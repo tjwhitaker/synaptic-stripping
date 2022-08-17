@@ -6,7 +6,7 @@ This repository is the official implementation of [Synaptic Stripping](#). This 
 
 Dead neurons are identified. Problematic connections are pruned. Training continues with regenerated neurons.
 
-The current implementation is set up for the vision transformer experiments.
+The current implementation is set up for training vision transformers and testing with corrupted datasets.
 
 ## Requirements
 
@@ -63,7 +63,7 @@ Parameters:
 - `expansion_factor` &mdash; expansion of the hidden size for mlp layers in the encoder blocks (default: 4)
 - `epochs` &mdash; number of training epochs (default: 200)
 - `warmup_epochs` &mdash; number of epochs to linearly increase the learning rate from 0 to init_lr (default: 5)
-- `save_freq` &mdash; save the model every n epochs during training (default: 10)
+- `save_freq` &mdash; save the model every n epochs during training (default: -1)
 - `optimizer` &mdash; optimizer to use for training the parent network [adam/~~sgd~~] (default: adam)
 - `scheduler` &mdash; learning rate schedule for the main phase of training [cosine/~~linear~~] (default: cosine)
 - `init_lr` &mdash; initial learning rate (default: 1e-3)

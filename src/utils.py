@@ -92,7 +92,7 @@ def count_active_parameters(model, dead_neurons, synaptic_stripping, device):
 
         if isinstance(layer, torch.nn.Linear):
             # Mask dead neurons
-            mask = torch.ones(layer.weight.shape)
+            mask = torch.ones(layer.weight.shape).to(device)
             mask[indices, :] = 0
 
             if synaptic_stripping:

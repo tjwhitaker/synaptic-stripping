@@ -154,7 +154,6 @@ def get_corrupted_loader(dataset='cifar10', data_path='data', batch_size=128, nu
     ]
 
     if dataset == "cifar10":
-        num_classes = 10
         labels_path = f"{data_path}/CIFAR-10-C/labels.npy"
 
         mean = (0.4914, 0.4822, 0.4465)
@@ -187,7 +186,6 @@ def get_corrupted_loader(dataset='cifar10', data_path='data', batch_size=128, nu
             shuffle=False)
 
     elif dataset == "cifar100":
-        num_classes = 100
         labels_path = f"{data_path}/CIFAR-100-C/labels.npy"
 
         mean = (0.5071, 0.4867, 0.4408)
@@ -220,7 +218,6 @@ def get_corrupted_loader(dataset='cifar10', data_path='data', batch_size=128, nu
             shuffle=False)
 
     elif dataset == "svhn":
-        num_classes = 10
         labels_path = f"{data_path}/SVHN-C/labels.npy"
 
         mean = (0.4377, 0.4438, 0.4728)
@@ -257,7 +254,6 @@ def get_corrupted_loader(dataset='cifar10', data_path='data', batch_size=128, nu
             shuffle=False)
 
     else:
-        num_classes = 200
         mean = (0.485, 0.456, 0.406)
         std = (0.229, 0.224, 0.225)
 
@@ -278,4 +274,4 @@ def get_corrupted_loader(dataset='cifar10', data_path='data', batch_size=128, nu
             batch_size=batch_size,
             num_workers=num_workers)
 
-    return loader, num_classes
+    return loader

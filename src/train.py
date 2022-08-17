@@ -47,8 +47,8 @@ parser.add_argument('--epochs', type=int, default=200, metavar='INT',
                     help='number of epochs to train (default: 200)')
 parser.add_argument('--warmup_epochs', type=int, default=5, metavar='INT',
                     help='number of warmup epochs (default: 5)')
-parser.add_argument('--save_freq', type=int, default=10, metavar='INT',
-                    help='save frequency (default: 10)')
+parser.add_argument('--save_freq', type=int, default=-1, metavar='INT',
+                    help='save frequency (default: -1)')
 parser.add_argument('--optimizer', type=str, default='adam', metavar='STR',
                     help='optimizer (default: adam)')
 parser.add_argument('--scheduler', type=str, default='cosine', metavar='STR',
@@ -96,13 +96,20 @@ train_loader, test_loader = get_loaders(
 # Model
 ########
 
+num_classes = {
+    'cifar10': 10,
+    'cifar100': 100,
+    'svhn': 10,
+    'tinyimagenet': 200
+}
+
 model = ViT(
     patch=args.patch_size,
     head=args.heads,
     num_layers=args.layers,
     hidden=args.hidden_size,
     mlp_hidden=args.hidden_size * args.expansion_factor,
-    num_classes=len(train_loader.dataset.classes),
+    num_classes=num_classes[args.dataset],
     activation=args.activation).to(device)
 
 ########
@@ -179,9 +186,9 @@ for epoch in range(args.epochs):
     # Debug
     scheduler.step()
 
-    if (epoch % args.save_freq == 0) or (epoch == (args.epochs - 1)):
+    if ((args.save_freq != -1) and (epoch % args.save_freq == 0)) or (epoch == (args.epochs - 1)):
         torch.save(model.state_dict(
-        ), f"{args.checkpoint_dir}/{args.activation}_{args.synaptic_stripping}_{epoch}.pt")
+        ), f"{args.checkpoint_dir}/{args.dataset}_{args.activation}_{args.synaptic_stripping}_{epoch}.pt")
 
     total_train_accuracy = train_accuracy.compute()
     total_train_loss = train_loss.compute()

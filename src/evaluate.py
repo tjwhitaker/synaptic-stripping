@@ -56,11 +56,18 @@ if args.verbose:
 # Data
 #######
 
-loader, num_classes = get_corrupted_loader(
+loader = get_corrupted_loader(
     dataset=args.dataset,
     data_path=args.data_path,
     batch_size=args.batch_size,
     num_workers=args.num_workers)
+
+num_classes = {
+    'cifar10': 10,
+    'cifar100': 100,
+    'svhn': 10,
+    'tinyimagenet': 200
+}
 
 ########
 # Model
@@ -72,7 +79,7 @@ model = ViT(
     num_layers=args.layers,
     hidden=args.hidden_size,
     mlp_hidden=args.hidden_size * args.expansion_factor,
-    num_classes=num_classes,
+    num_classes=num_classes[args.dataset],
     activation=args.activation).to(device)
 
 criterion = torch.nn.CrossEntropyLoss()
@@ -116,5 +123,5 @@ with torch.no_grad():
 if args.verbose:
     print("=============================================================")
     print()
-    print(f"Loss: {loss} Accuracy: {accuracy}")
+    print(f"Loss: {loss.compute()} Accuracy: {accuracy.compute()}")
     print()
