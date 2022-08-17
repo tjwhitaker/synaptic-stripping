@@ -75,3 +75,17 @@ Parameters:
 - `stripping_factor` &mdash; percentage of remaining weights to prune from dead neurons at each stripping iteration [0 < x < 1.0] (default: 0.05)
 - `verbose` &mdash; [true/false] (default: true)
 - `seed` &mdash; (default: 1)
+
+## Evaluation
+
+Evaluation on corrupted versions of CIFAR-10, CIFAR-100, SVHN, and Tiny ImageNet. Documentation in progress...
+
+Expected directory setup:
+
+```
+data
+  - CIFAR-10-C
+  - CIFAR-100-C
+  - SVHN-C
+  - TINY-IMAGENET-C
+```

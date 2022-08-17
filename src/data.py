@@ -95,6 +95,7 @@ def get_loaders(dataset='cifar10', data_path='data', autoaugment=True, batch_siz
             torchvision.transforms.Normalize(mean, std)]
 
         test_transforms = [
+            torchvision.transforms.Resize(32),
             torchvision.transforms.ToTensor(),
             torchvision.transforms.Normalize(mean, std)]
 
@@ -264,10 +265,10 @@ def get_corrupted_loader(dataset='cifar10', data_path='data', batch_size=128, nu
 
         datasets = []
 
-        for c in os.listdir(f"{data_path}/Tiny-ImageNet-C"):
+        for c in os.listdir(f"{data_path}/TINY-IMAGENET-C"):
             for s in range(1, 6):
                 datasets.append(torchvision.datasets.ImageFolder(
-                    f"{data_path}/Tiny-ImageNet-C/{c}/{s}", transform=transforms))
+                    f"{data_path}/TINY-IMAGENET-C/{c}/{s}", transform=transforms))
 
         loader = torch.utils.data.DataLoader(
             torch.utils.data.ConcatDataset(datasets),
