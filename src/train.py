@@ -163,9 +163,10 @@ for epoch in range(args.epochs):
     if args.activation == 'relu':
         dead_neurons = calculate_dead_neurons(hook_outputs)
         remove_hooks(hook_handles)
+        print(dead_neurons)
 
     if args.synaptic_stripping and (epoch % args.stripping_frequency == 0):
-        synaptic_strip(model, dead_neurons, args.stripping_factor)
+        synaptic_strip(model, dead_neurons, args.stripping_factor, device)
 
     scheduler.step()
 

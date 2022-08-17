@@ -8,82 +8,106 @@ def get_loaders(dataset='cifar10', data_path='data', autoaugment=True, batch_siz
         mean = (0.4914, 0.4822, 0.4465)
         std = (0.2471, 0.2435, 0.2616)
 
-        train_transforms = torchvision.transforms.Compose([
+        train_transforms = [
             torchvision.transforms.RandomCrop(32, padding=4, fill=128),
             torchvision.transforms.RandomHorizontalFlip(),
             torchvision.transforms.ToTensor(),
-            torchvision.transforms.Normalize(mean, std)])
+            torchvision.transforms.Normalize(mean, std)]
 
-        test_transforms = torchvision.transforms.Compose([
+        test_transforms = [
             torchvision.transforms.ToTensor(),
-            torchvision.transforms.Normalize(mean, std)])
+            torchvision.transforms.Normalize(mean, std)]
+
+        if autoaugment:
+            train_transforms.insert(2, CIFAR10Policy())
+
+        train_transforms = torchvision.transforms.Compose(train_transforms)
+        test_transforms = torchvision.transforms.Compose(test_transforms)
 
         train_dataset = torchvision.datasets.CIFAR10(
-            "data", train=True, transform=train_transforms, download=True)
+            data_path, train=True, transform=train_transforms, download=True)
 
         test_dataset = torchvision.datasets.CIFAR10(
-            "data", train=False, transform=test_transforms, download=True)
+            data_path, train=False, transform=test_transforms, download=True)
 
     elif dataset == 'cifar100':
         mean = (0.5071, 0.4867, 0.4408)
         std = (0.2675, 0.2565, 0.2761)
 
-        train_transforms = torchvision.transforms.Compose([
+        train_transforms = [
             torchvision.transforms.RandomCrop(32, padding=4, fill=128),
             torchvision.transforms.RandomHorizontalFlip(),
             torchvision.transforms.ToTensor(),
-            torchvision.transforms.Normalize(mean, std)])
+            torchvision.transforms.Normalize(mean, std)]
 
-        test_transforms = torchvision.transforms.Compose([
+        test_transforms = [
             torchvision.transforms.ToTensor(),
-            torchvision.transforms.Normalize(mean, std)])
+            torchvision.transforms.Normalize(mean, std)]
+
+        if autoaugment:
+            train_transforms.insert(2, CIFAR10Policy())
+
+        train_transforms = torchvision.transforms.Compose(train_transforms)
+        test_transforms = torchvision.transforms.Compose(test_transforms)
 
         train_dataset = torchvision.datasets.CIFAR100(
-            "data", train=True, transform=train_transforms, download=True)
+            data_path, train=True, transform=train_transforms, download=True)
 
         test_dataset = torchvision.datasets.CIFAR100(
-            "data", train=False, transform=test_transforms, download=True)
+            data_path, train=False, transform=test_transforms, download=True)
 
     elif dataset == 'svhn':
         mean = (0.4377, 0.4438, 0.4728)
         std = (0.1980, 0.2010, 0.1970)
 
-        train_transforms = torchvision.transforms.Compose([
+        train_transforms = [
             torchvision.transforms.RandomCrop(32, padding=4, fill=128),
             torchvision.transforms.ToTensor(),
-            torchvision.transforms.Normalize(mean, std)])
+            torchvision.transforms.Normalize(mean, std)]
 
-        test_transforms = torchvision.transforms.Compose([
+        test_transforms = [
             torchvision.transforms.ToTensor(),
-            torchvision.transforms.Normalize(mean, std)])
+            torchvision.transforms.Normalize(mean, std)]
+
+        if autoaugment:
+            train_transforms.insert(1, SVHNPolicy())
+
+        train_transforms = torchvision.transforms.Compose(train_transforms)
+        test_transforms = torchvision.transforms.Compose(test_transforms)
 
         train_dataset = torchvision.datasets.SVHN(
-            "data", split="train", transform=train_transforms, download=True)
+            data_path, split="train", transform=train_transforms, download=True)
 
         test_dataset = torchvision.datasets.SVHN(
-            "data", split="test", transform=test_transforms, download=True)
+            data_path, split="test", transform=test_transforms, download=True)
 
     elif dataset == 'tinyimagenet':
         mean = (0.485, 0.456, 0.406)
         std = (0.229, 0.224, 0.225)
 
-        train_transforms = torchvision.transforms.Compose([
+        train_transforms = [
             torchvision.transforms.Resize(32),
             torchvision.transforms.RandomCrop(32, padding=4, fill=128),
             torchvision.transforms.RandomHorizontalFlip(),
             torchvision.transforms.ToTensor(),
-            torchvision.transforms.Normalize(mean, std)])
+            torchvision.transforms.Normalize(mean, std)]
 
-        test_transforms = torchvision.transforms.Compose([
+        test_transforms = [
             torchvision.transforms.ToTensor(),
-            torchvision.transforms.Normalize(mean, std)])
+            torchvision.transforms.Normalize(mean, std)]
+
+        if autoaugment:
+            train_transforms.insert(3, CIFAR10Policy())
+
+        train_transforms = torchvision.transforms.Compose(train_transforms)
+        test_transforms = torchvision.transforms.Compose(test_transforms)
 
         # Need to download tiny imagenet manually
         train_dataset = torchvision.datasets.ImageFolder(
-            "data/tiny-imagenet-200/train", transform=train_transforms)
+            f"{data_path}/tiny-imagenet-200/train", transform=train_transforms)
 
         test_dataset = torchvision.datasets.ImageFolder(
-            "data/tiny-imagenet-200/val", transform=test_transforms)
+            f"{data_path}/tiny-imagenet-200/val", transform=test_transforms)
 
     else:
         print(f"Dataset <{dataset}> is not supported")
