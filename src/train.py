@@ -3,6 +3,7 @@ import torch
 import torchmetrics
 import os
 import sys
+from datetime import datetime
 from models.vit import ViT
 from data import get_loaders
 from utils import setup_hooks, remove_hooks, calculate_dead_neurons, synaptic_strip, count_active_parameters
@@ -47,8 +48,8 @@ parser.add_argument('--epochs', type=int, default=200, metavar='INT',
                     help='number of epochs to train (default: 200)')
 parser.add_argument('--warmup_epochs', type=int, default=5, metavar='INT',
                     help='number of warmup epochs (default: 5)')
-parser.add_argument('--save_freq', type=int, default=-1, metavar='INT',
-                    help='save frequency (default: -1)')
+parser.add_argument('--save_freq', type=int, default=50, metavar='INT',
+                    help='save frequency (default: 50)')
 parser.add_argument('--optimizer', type=str, default='adam', metavar='STR',
                     help='optimizer (default: adam)')
 parser.add_argument('--scheduler', type=str, default='cosine', metavar='STR',
@@ -78,11 +79,16 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 if args.verbose:
     print(''.join(f"{k}={v}\n" for k, v in vars(args).items()))
 
+
+checkpoint_path = os.path.join(args.checkpoint_dir, str(datetime.now()))
+os.makedirs(checkpoint_path, exist_ok=True)
+
+with open(os.path.join(checkpoint_path, "hyperparams.txt"), "w") as f:
+    f.write(''.join(f"{k}={v}\n" for k, v in vars(args).items()))
+
 #######
 # Data
 #######
-
-os.makedirs(args.checkpoint_dir, exist_ok=True)
 
 train_loader, test_loader = get_loaders(
     dataset=args.dataset,
@@ -137,7 +143,7 @@ num_active_params = torchmetrics.SumMetric().to(device)
 if args.synaptic_stripping:
     hook_outputs = setup_hooks(model)
 
-for epoch in range(args.epochs):
+for epoch in range(1, args.epochs + 1):
     # Training Loop
     model.train()
     for _, (inputs, targets) in enumerate(train_loader):
@@ -186,9 +192,9 @@ for epoch in range(args.epochs):
     # Debug
     scheduler.step()
 
-    if ((args.save_freq != -1) and (epoch % args.save_freq == 0)) or (epoch == (args.epochs - 1)):
+    if epoch % args.save_freq == 0 or (epoch == (args.epochs - 1)):
         torch.save(model.state_dict(
-        ), f"{args.checkpoint_dir}/{args.dataset}_{args.activation}_{args.synaptic_stripping}_{epoch}.pt")
+        ), f"{checkpoint_path}/epoch_{epoch}.pt")
 
     total_train_accuracy = train_accuracy.compute()
     total_train_loss = train_loss.compute()
